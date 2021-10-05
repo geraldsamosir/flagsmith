@@ -2,5 +2,5 @@
 from django.apps import AppConfig
 
 
-class WebhookntegrationConfig(AppConfig):
+class WebhookIntegrationConfig(AppConfig):
     name = "integrations.webhook"
