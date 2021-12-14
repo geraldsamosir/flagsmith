@@ -1,7 +1,7 @@
 from django.conf.urls import include, url
 from rest_framework_nested import routers
 
-from features.views import FeatureStateViewSet
+from features.views import EdgeIdentityFeatureStateViewSet, FeatureStateViewSet
 from integrations.amplitude.views import AmplitudeConfigurationViewSet
 from integrations.heap.views import HeapConfigurationViewSet
 from integrations.mixpanel.views import MixpanelConfigurationViewSet
@@ -61,12 +61,21 @@ environments_router.register(
     MixpanelConfigurationViewSet,
     basename="integrations-mixpanel",
 )
+edge_identity_router = routers.NestedSimpleRouter(
+    environments_router, r"edge-identities", lookup="edge_identity"
+)
+edge_identity_router.register(
+    r"edge-featurestates",
+    EdgeIdentityFeatureStateViewSet,
+    basename="edge-identity-featurestates",
+)
 identity_router = routers.NestedSimpleRouter(
     environments_router, r"identities", lookup="identity"
 )
 identity_router.register(
     r"featurestates", FeatureStateViewSet, basename="identity-featurestates"
 )
+
 identity_router.register(r"traits", TraitViewSet, basename="identities-traits")
 
 app_name = "environments"
@@ -75,4 +84,5 @@ urlpatterns = [
     url(r"^", include(router.urls)),
     url(r"^", include(environments_router.urls)),
     url(r"^", include(identity_router.urls)),
+    url(r"^", include(edge_identity_router.urls)),
 ]
