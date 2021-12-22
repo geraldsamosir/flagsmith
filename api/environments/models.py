@@ -12,7 +12,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
-from django_lifecycle import AFTER_CREATE, LifecycleModel, hook
+from django_lifecycle import AFTER_CREATE, AFTER_SAVE, LifecycleModel, hook
 
 from app.utils import create_hash
 from environments.exceptions import EnvironmentHeaderNotPresentError
@@ -65,6 +65,14 @@ class Environment(LifecycleModel):
                 identity=None,
                 enabled=feature.default_enabled,
             )
+
+    @hook(AFTER_SAVE, when="api_key", has_changed=True)
+    def update_related_api_key(self):
+        # At the moment, it's too much pain to remove
+        existing_environment_api_key = EnvironmentAPIKey.objects.filter(
+            api_key_type=EnvironmentAPIKeyType.CLIENT
+        ).first()
+        existing_environment_api_key.key = self.api_key
 
     def __str__(self):
         return "Project %s - Environment %s" % (self.project.name, self.name)
@@ -154,6 +162,7 @@ class Webhook(models.Model):
 
 class EnvironmentAPIKeyType(enum.Enum):
     SERVER = "Server"
+    CLIENT = "Client"
 
 
 environment_api_key_types = [(tag.name, tag.value) for tag in EnvironmentAPIKeyType]
@@ -167,7 +176,7 @@ class EnvironmentAPIKey(models.Model):
         choices=environment_api_key_types,
         default=EnvironmentAPIKeyType.SERVER,
         max_length=50,
-    )  # TODO: move client side api keys to this model
+    )
     key = models.CharField(default=create_hash, max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=100)

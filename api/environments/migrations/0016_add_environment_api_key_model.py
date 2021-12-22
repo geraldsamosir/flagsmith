@@ -6,24 +6,72 @@ import django.db.models.deletion
 import environments.models
 
 
+def create_client_environment_api_keys(apps, schema_editor):
+    environment_api_key_model_class = apps.get_model(
+        "environments", "EnvironmentAPIKey"
+    )
+    environment_model_class = apps.get_model("environments", "Environment")
+
+    environment_api_key_model_class.objects.bulk_create(
+        [
+            environment_api_key_model_class(
+                api_key_type=environments.models.EnvironmentAPIKeyType.CLIENT.name,
+                key=environment.api_key,
+                name="Default",
+            )
+            for environment in environment_model_class.objects.all()
+        ]
+    )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('environments', '0015_auto_20200916_1441'),
+        ("environments", "0015_auto_20200916_1441"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='EnvironmentAPIKey',
+            name="EnvironmentAPIKey",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('api_key_type', models.CharField(choices=[('SERVER', 'Server')], default=environments.models.EnvironmentAPIKeyType('Server'), max_length=50)),
-                ('key', models.CharField(default=app.utils.create_hash, max_length=100, unique=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('name', models.CharField(max_length=100)),
-                ('expires_at', models.DateTimeField(blank=True, null=True)),
-                ('active', models.BooleanField(default=True)),
-                ('environment', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='api_keys', to='environments.Environment')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "api_key_type",
+                    models.CharField(
+                        choices=[("SERVER", "Server")],
+                        default=environments.models.EnvironmentAPIKeyType("Server"),
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "key",
+                    models.CharField(
+                        default=app.utils.create_hash, max_length=100, unique=True
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("name", models.CharField(max_length=100)),
+                ("expires_at", models.DateTimeField(blank=True, null=True)),
+                ("active", models.BooleanField(default=True)),
+                (
+                    "environment",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="api_keys",
+                        to="environments.Environment",
+                    ),
+                ),
             ],
+        ),
+        migrations.RunPython(
+            create_client_environment_api_keys, reverse_code=lambda *args: None
         ),
     ]
