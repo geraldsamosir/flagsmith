@@ -13,6 +13,7 @@ from organisations.chargebee import (
     get_max_seats_for_plan,
     get_portal_url,
 )
+from webhooks.models import AbstractBaseWebhookModel
 
 
 class OrganisationRole(enum.Enum):
@@ -141,8 +142,7 @@ class Subscription(models.Model):
         return get_portal_url(self.customer_id, redirect_url)
 
 
-class OrganisationWebhook(models.Model):
-    url = models.URLField()
+class OrganisationWebhook(AbstractBaseWebhookModel):
     name = models.CharField(max_length=100)
     enabled = models.BooleanField(default=True)
     organisation = models.ForeignKey(
